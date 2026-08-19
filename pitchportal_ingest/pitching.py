@@ -2,15 +2,15 @@
 
 Three public Savant CSV exports get merged on (player_id, pitch_type):
 
-  1. **pitch-movement** — `pitcher_break_z_induced` (IVB), `pitcher_break_z`
+  1. **pitch-movement** ‚Äî `pitcher_break_z_induced` (IVB), `pitcher_break_z`
      (total VB), `pitcher_break_x` (HB), `avg_speed`, plus Savant's own
      percent-rank vs league for the pitch type.
-  2. **pitch-arsenal-stats** — `whiff_percent`, `run_value_per_100`,
+  2. **pitch-arsenal-stats** ‚Äî `whiff_percent`, `run_value_per_100`,
      `pitch_usage`, `k_percent`, `put_away`, `est_woba`, `hard_hit_percent`.
-  3. **custom leaderboard** — `arm_angle`. Pitcher-level, joined on player_id.
+  3. **custom leaderboard** ‚Äî `arm_angle`. Pitcher-level, joined on player_id.
 
 **Extension, VAA and HAA come from raw Statcast, not a leaderboard.** No Savant
-leaderboard publishes them — the custom leaderboard echoes back any selection
+leaderboard publishes them ‚Äî the custom leaderboard echoes back any selection
 name you give it and then returns it empty (seven spellings of extension tried,
 all blank across 339 rows). But the raw pitch-level search export carries the
 release-point physics, so we compute them ourselves:
@@ -23,13 +23,13 @@ release-point physics, so we compute them ourselves:
 
 Statcast measures from y = 50 ft and the plate front edge is 17/12 ft. The
 negation matters: without it the sign comes out inverted and every VAA reads
-positive, which is backwards — the ball is descending into the zone.
+positive, which is backwards ‚Äî the ball is descending into the zone.
 
-Sanity check against known league values: four-seam VAA ≈ -4.8°, curveball
-≈ -9.7°, average extension ≈ 6.4 ft. Those are the numbers this produces.
+Sanity check against known league values: four-seam VAA ‚âà -4.8¬∞, curveball
+‚âà -9.7¬∞, average extension ‚âà 6.4 ft. Those are the numbers this produces.
 
 Because these are stable release traits rather than volatile results, a rolling
-recent window is sampled instead of a whole season — a few weeks of pitches is
+recent window is sampled instead of a whole season ‚Äî a few weeks of pitches is
 plenty and keeps the pull to a sane size.
 """
 
@@ -88,7 +88,7 @@ PITCH_TYPES = {
 
 # Which direction is "better" on IVB, per pitch. This is the rule that makes the
 # leaderboard mean anything: for a four-seam you want ride, so more IVB is
-# better — but for a sinker, changeup, splitter or curve, LESS induced vertical
+# better ‚Äî but for a sinker, changeup, splitter or curve, LESS induced vertical
 # break is the good end. Cutters and sweepers live around zero and can be either
 # side of it depending on the pitcher, so ranking them by IVB is meaningless and
 # we say so rather than sorting them arbitrarily.
@@ -193,7 +193,7 @@ def fetch_arsenal(year: int, min_pa: int = 10) -> dict[tuple[str, str], dict]:
 
 
 def fetch_release(year: int) -> dict[str, dict]:
-    """player_id -> arm angle. Extension is not available here — see docstring."""
+    """player_id -> arm angle. Extension is not available here ‚Äî see docstring."""
     try:
         rows = _rows(_get(CUSTOM.format(year=year)))
     except Exception:
@@ -277,7 +277,7 @@ def fetch_approach(year: int, days: int = APPROACH_WINDOW_DAYS) -> dict[tuple[st
 
 
 def _percentile(values: list[float], v: float) -> float:
-    """Where v sits in values, 0–100."""
+    """Where v sits in values, 0‚Äì100."""
     if not values:
         return 50.0
     below = sum(1 for x in values if x < v)
@@ -285,7 +285,7 @@ def _percentile(values: list[float], v: float) -> float:
 
 
 def _grade(pct: float) -> int:
-    """20–80 scouting scale from a percentile. 50 is average, 10 points per SD."""
+    """20‚Äì80 scouting scale from a percentile. 50 is average, 10 points per SD."""
     # ~0.5 SD per 10 points: p50 -> 50, p84 -> 60, p16 -> 40.
     if pct >= 99: return 80
     if pct >= 95: return 70
@@ -300,10 +300,10 @@ def _grade(pct: float) -> int:
 
 
 def add_grades(rows: list[dict]) -> None:
-    """Grade every pitch on the 20–80 scale, within its own pitch type.
+    """Grade every pitch on the 20‚Äì80 scale, within its own pitch type.
 
     NOTE: this is OUR grade, computed transparently from Savant run value per
-    100 and whiff rate — it is not FanGraphs Stuff+ or PitchingBot, and it is
+    100 and whiff rate ‚Äî it is not FanGraphs Stuff+ or PitchingBot, and it is
     labelled that way in the app so nobody mistakes it for a licensed metric.
     """
     by_pitch: dict[str, list[dict]] = {}
@@ -375,7 +375,7 @@ def build_trends(years: list[int] | None = None) -> dict:
 
     This exists because "pitch trends" written from blog posts is just repeating
     what someone else concluded. Pulling arsenal stats for several seasons and
-    diffing them gives findings we can point at a number for — usage share,
+    diffing them gives findings we can point at a number for ‚Äî usage share,
     average velocity and whiff rate per pitch type, and how each has moved.
     """
     years = years or TREND_YEARS
@@ -444,6 +444,87 @@ def build_trends(years: list[int] | None = None) -> dict:
     return {"years": got, "from": first, "to": last, "perYear": per_year, "findings": findings}
 
 
+# ---- derived reference files ------------------------------------------------
+# metrics.json (league per-pitch ranges) and arsenals.json (featured pitcher
+# mixes) used to be built by a separate pybaseball pipeline that pulled whole
+# raw seasons. Everything they need is already in the rows built above, so they
+# are derived here instead ‚Äî one scheduled job keeps every screen's data the
+# same age. Spin is the one field these rows don't carry; league spin barely
+# moves year to year, so it ships as reference constants.
+
+SPIN_REFERENCE = {
+    "fourseam": {"avg": 2300, "lo": 2000, "hi": 2600},
+    "sinker": {"avg": 2150, "lo": 1850, "hi": 2400},
+    "cutter": {"avg": 2400, "lo": 2150, "hi": 2600},
+    "slider": {"avg": 2450, "lo": 2100, "hi": 2700},
+    "sweeper": {"avg": 2700, "lo": 2400, "hi": 2950},
+    "curve": {"avg": 2650, "lo": 2300, "hi": 3000},
+    "change": {"avg": 1750, "lo": 1500, "hi": 2100},
+    "split": {"avg": 1300, "lo": 1000, "hi": 1700},
+}
+
+
+def _pct(sorted_vals: list[float], p: float) -> float:
+    if not sorted_vals:
+        return 0.0
+    i = (len(sorted_vals) - 1) * p
+    lo, hi = int(i), min(int(i) + 1, len(sorted_vals) - 1)
+    return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (i - lo)
+
+
+def derive_metrics(rows: list[dict]) -> dict:
+    """League {avg, lo, hi} per pitch type. lo/hi are the 10th/90th percentile ‚Äî
+    'normal range', not extremes, which is what the app's copy promises."""
+    out: dict = {}
+    for key in config.APP_PITCH_KEYS:
+        entry: dict = {}
+        sample = [r for r in rows if r["pitch"] == key and (r.get("pitches") or 0) >= 50]
+        for field in ("velo", "ivb", "hb"):
+            vals = sorted(v for r in sample if (v := r.get(field)) is not None)
+            if not vals:
+                continue
+            entry[field] = {
+                "avg": round(sum(vals) / len(vals)),
+                "lo": round(_pct(vals, 0.10)),
+                "hi": round(_pct(vals, 0.90)),
+            }
+        entry["spin"] = SPIN_REFERENCE[key]
+        out[key] = entry
+    return out
+
+
+def derive_arsenals(rows: list[dict]) -> dict:
+    """Featured pitchers' current mixes, straight from this season's rows.
+    A featured name with no rows this season (hurt, retired) is dropped rather
+    than shown with stale numbers."""
+    by_name: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        by_name[r["name"]].append(r)
+    out: dict = {}
+    for slug, (full_name, hand, role) in config.FEATURED.items():
+        mine = [r for r in by_name.get(full_name, []) if r.get("usage")]
+        if not mine:
+            continue
+        mine.sort(key=lambda r: -(r["usage"] or 0))
+        out[slug] = {
+            "name": full_name,
+            "hand": f"{hand}HP",
+            "role": role,
+            "pitches": [
+                [
+                    config.PITCH_DISPLAY[r["pitch"]],
+                    round(r["usage"]),
+                    round(r["velo"]) if r.get("velo") is not None else 0,
+                    f"{'+' if (r.get('ivb') or 0) >= 0 else ''}{round(r.get('ivb') or 0)}‚Ä≥",
+                    f"{abs(round(r.get('hb') or 0))}‚Ä≥",
+                ]
+                for r in mine
+                if r.get("usage") and r["usage"] >= 3
+            ],
+        }
+    return out
+
+
 def refresh(year: int | None = None, path=None) -> dict:
     year = year or config.SEASON
     data = build(year)
@@ -454,6 +535,16 @@ def refresh(year: int | None = None, path=None) -> dict:
     target = path or (config.CACHE_DIR / "pitching.json")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(data), encoding="utf-8")
+
+    # Keep the sibling reference files the same age as the leaderboards.
+    (config.CACHE_DIR / "metrics.json").write_text(
+        json.dumps(derive_metrics(data["rows"]), ensure_ascii=False, indent=1),
+        encoding="utf-8",
+    )
+    (config.CACHE_DIR / "arsenals.json").write_text(
+        json.dumps(derive_arsenals(data["rows"]), ensure_ascii=False, indent=1),
+        encoding="utf-8",
+    )
     return data
 
 
