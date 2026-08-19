@@ -1,13 +1,324 @@
 {
-  "sale": { "name": "Chris Sale", "hand": "LHP", "role": "Low-slot lefty — east-west fastball/slider picture.", "pitches": [["4-Seam", 40, 95, "+14″", "9″"], ["Slider", 32, 80, "+1″", "11″"], ["Changeup", 16, 86, "+8″", "14″"], ["Sinker", 12, 94, "+8″", "16″"]] },
-  "skubal": { "name": "Tarik Skubal", "hand": "LHP", "role": "Power lefty — elite fastball/changeup combo.", "pitches": [["4-Seam", 42, 97, "+15″", "8″"], ["Changeup", 24, 88, "+6″", "16″"], ["Sinker", 18, 97, "+9″", "15″"], ["Slider", 16, 87, "+2″", "6″"]] },
-  "snell": { "name": "Blake Snell", "hand": "LHP", "role": "High-ride heater up, big breaking balls down.", "pitches": [["4-Seam", 48, 96, "+17″", "7″"], ["Slider", 22, 88, "+2″", "5″"], ["Curveball", 18, 81, "−10″", "9″"], ["Changeup", 12, 89, "+5″", "14″"]] },
-  "valdez": { "name": "Framber Valdez", "hand": "LHP", "role": "Ground-ball model — heavy sinker, big curve. A great template for your arsenal.", "pitches": [["Sinker", 48, 94, "+6″", "17″"], ["Curveball", 32, 80, "−12″", "10″"], ["Changeup", 14, 88, "+5″", "15″"], ["Cutter", 6, 90, "+7″", "2″"]] },
-  "cole": { "name": "Gerrit Cole", "hand": "RHP", "role": "Prototype power righty — ride up, breaking down.", "pitches": [["4-Seam", 50, 97, "+16″", "8″"], ["Slider", 18, 88, "+2″", "6″"], ["Knuckle-Curve", 14, 84, "−8″", "7″"], ["Changeup", 12, 89, "+8″", "14″"], ["Cutter", 6, 91, "+9″", "3″"]] },
-  "burnes": { "name": "Corbin Burnes", "hand": "RHP", "role": "Cutter-led — builds everything off a plus cutter.", "pitches": [["Cutter", 50, 95, "+10″", "3″"], ["Curveball", 18, 81, "−10″", "9″"], ["Slider", 14, 87, "+1″", "7″"], ["Sinker", 12, 95, "+7″", "15″"], ["Changeup", 6, 88, "+6″", "14″"]] },
-  "strider": { "name": "Spencer Strider", "hand": "RHP", "role": "Two-pitch power — huge ride plus a wipeout slider.", "pitches": [["4-Seam", 60, 97, "+18″", "9″"], ["Slider", 34, 86, "+1″", "8″"], ["Changeup", 6, 88, "+6″", "14″"]] },
-  "webb": { "name": "Logan Webb", "hand": "RHP", "role": "Sinker / sweeper ground-ball machine.", "pitches": [["Sinker", 40, 92, "+7″", "17″"], ["Sweeper", 26, 82, "−2″", "14″"], ["Changeup", 22, 86, "+5″", "16″"], ["Curveball", 12, 79, "−9″", "9″"]] },
-  "verlander": { "name": "Justin Verlander", "hand": "RHP", "role": "High-IVB ride leader — the prototype rising four-seam.", "pitches": [["4-Seam", 48, 94, "+17″", "7″"], ["Slider", 24, 86, "+1″", "7″"], ["Curveball", 16, 79, "−9″", "8″"], ["Changeup", 12, 87, "+7″", "13″"]] },
-  "gausman": { "name": "Kevin Gausman", "hand": "RHP", "role": "Fastball / splitter — the model modern splitter.", "pitches": [["4-Seam", 55, 94, "+15″", "9″"], ["Splitter", 40, 85, "+2″", "8″"], ["Slider", 5, 83, "+1″", "6″"]] },
-  "holmes": { "name": "Clay Holmes", "hand": "RHP", "role": "Sinker / sweeper — huge sweep off heavy sink.", "pitches": [["Sinker", 45, 96, "+5″", "16″"], ["Sweeper", 45, 83, "−2″", "15″"], ["Slider", 10, 88, "+1″", "6″"]] }
+ "sale": {
+  "name": "Chris Sale",
+  "hand": "LHP",
+  "role": "Low-slot lefty — east-west fastball/slider picture.",
+  "pitches": [
+   [
+    "4-Seam",
+    41,
+    96,
+    "+10‚Ä≥",
+    "15‚Ä≥"
+   ],
+   [
+    "Slider",
+    39,
+    80,
+    "-4‚Ä≥",
+    "12‚Ä≥"
+   ],
+   [
+    "Changeup",
+    11,
+    88,
+    "0‚Ä≥",
+    "16‚Ä≥"
+   ],
+   [
+    "Sinker",
+    8,
+    96,
+    "+2‚Ä≥",
+    "18‚Ä≥"
+   ]
+  ]
+ },
+ "skubal": {
+  "name": "Tarik Skubal",
+  "hand": "LHP",
+  "role": "Power lefty — elite fastball/changeup combo.",
+  "pitches": [
+   [
+    "4-Seam",
+    35,
+    97,
+    "+17‚Ä≥",
+    "3‚Ä≥"
+   ],
+   [
+    "Changeup",
+    26,
+    87,
+    "+5‚Ä≥",
+    "14‚Ä≥"
+   ],
+   [
+    "Sinker",
+    20,
+    97,
+    "+12‚Ä≥",
+    "13‚Ä≥"
+   ],
+   [
+    "Slider",
+    14,
+    90,
+    "+4‚Ä≥",
+    "3‚Ä≥"
+   ],
+   [
+    "Curveball",
+    4,
+    80,
+    "-5‚Ä≥",
+    "9‚Ä≥"
+   ]
+  ]
+ },
+ "snell": {
+  "name": "Blake Snell",
+  "hand": "LHP",
+  "role": "High-ride heater up, big breaking balls down.",
+  "pitches": [
+   [
+    "4-Seam",
+    48,
+    96,
+    "+18‚Ä≥",
+    "5‚Ä≥"
+   ],
+   [
+    "Curveball",
+    24,
+    80,
+    "-8‚Ä≥",
+    "12‚Ä≥"
+   ]
+  ]
+ },
+ "valdez": {
+  "name": "Framber Valdez",
+  "hand": "LHP",
+  "role": "Ground-ball model — heavy sinker, big curve. A great template for your arsenal.",
+  "pitches": [
+   [
+    "Sinker",
+    45,
+    94,
+    "+6‚Ä≥",
+    "15‚Ä≥"
+   ],
+   [
+    "Curveball",
+    29,
+    78,
+    "-14‚Ä≥",
+    "13‚Ä≥"
+   ],
+   [
+    "Changeup",
+    18,
+    89,
+    "+2‚Ä≥",
+    "14‚Ä≥"
+   ],
+   [
+    "Slider",
+    5,
+    86,
+    "+0‚Ä≥",
+    "3‚Ä≥"
+   ]
+  ]
+ },
+ "cole": {
+  "name": "Gerrit Cole",
+  "hand": "RHP",
+  "role": "Prototype power righty — ride up, breaking down.",
+  "pitches": [
+   [
+    "4-Seam",
+    49,
+    97,
+    "+17‚Ä≥",
+    "10‚Ä≥"
+   ],
+   [
+    "Slider",
+    19,
+    90,
+    "+3‚Ä≥",
+    "4‚Ä≥"
+   ],
+   [
+    "Changeup",
+    15,
+    86,
+    "+8‚Ä≥",
+    "15‚Ä≥"
+   ],
+   [
+    "Curveball",
+    13,
+    83,
+    "-14‚Ä≥",
+    "12‚Ä≥"
+   ],
+   [
+    "Sinker",
+    4,
+    96,
+    "+11‚Ä≥",
+    "16‚Ä≥"
+   ]
+  ]
+ },
+ "strider": {
+  "name": "Spencer Strider",
+  "hand": "RHP",
+  "role": "Two-pitch power — huge ride plus a wipeout slider.",
+  "pitches": [
+   [
+    "4-Seam",
+    48,
+    95,
+    "+17‚Ä≥",
+    "9‚Ä≥"
+   ],
+   [
+    "Slider",
+    28,
+    84,
+    "+5‚Ä≥",
+    "4‚Ä≥"
+   ],
+   [
+    "Curveball",
+    14,
+    78,
+    "-7‚Ä≥",
+    "6‚Ä≥"
+   ],
+   [
+    "Changeup",
+    10,
+    86,
+    "+8‚Ä≥",
+    "16‚Ä≥"
+   ]
+  ]
+ },
+ "webb": {
+  "name": "Logan Webb",
+  "hand": "RHP",
+  "role": "Sinker / sweeper ground-ball machine.",
+  "pitches": [
+   [
+    "Sinker",
+    29,
+    92,
+    "+0‚Ä≥",
+    "16‚Ä≥"
+   ],
+   [
+    "Changeup",
+    25,
+    86,
+    "-5‚Ä≥",
+    "10‚Ä≥"
+   ],
+   [
+    "Sweeper",
+    19,
+    84,
+    "+1‚Ä≥",
+    "14‚Ä≥"
+   ],
+   [
+    "Cutter",
+    14,
+    90,
+    "+7‚Ä≥",
+    "1‚Ä≥"
+   ],
+   [
+    "4-Seam",
+    13,
+    92,
+    "+10‚Ä≥",
+    "8‚Ä≥"
+   ]
+  ]
+ },
+ "gausman": {
+  "name": "Kevin Gausman",
+  "hand": "RHP",
+  "role": "Fastball / splitter — the model modern splitter.",
+  "pitches": [
+   [
+    "4-Seam",
+    51,
+    94,
+    "+17‚Ä≥",
+    "11‚Ä≥"
+   ],
+   [
+    "Splitter",
+    38,
+    84,
+    "+4‚Ä≥",
+    "14‚Ä≥"
+   ],
+   [
+    "Slider",
+    10,
+    84,
+    "+4‚Ä≥",
+    "1‚Ä≥"
+   ]
+  ]
+ },
+ "holmes": {
+  "name": "Clay Holmes",
+  "hand": "RHP",
+  "role": "Sinker / sweeper — huge sweep off heavy sink.",
+  "pitches": [
+   [
+    "Sinker",
+    50,
+    94,
+    "+2‚Ä≥",
+    "16‚Ä≥"
+   ],
+   [
+    "Sweeper",
+    20,
+    82,
+    "-4‚Ä≥",
+    "16‚Ä≥"
+   ],
+   [
+    "Changeup",
+    15,
+    89,
+    "-2‚Ä≥",
+    "9‚Ä≥"
+   ],
+   [
+    "Curveball",
+    8,
+    82,
+    "-14‚Ä≥",
+    "10‚Ä≥"
+   ],
+   [
+    "Cutter",
+    7,
+    88,
+    "+2‚Ä≥",
+    "2‚Ä≥"
+   ]
+  ]
+ }
 }
