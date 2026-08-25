@@ -2,15 +2,15 @@
 
 Three public Savant CSV exports get merged on (player_id, pitch_type):
 
-  1. **pitch-movement** ‚Äî `pitcher_break_z_induced` (IVB), `pitcher_break_z`
+  1. **pitch-movement** — `pitcher_break_z_induced` (IVB), `pitcher_break_z`
      (total VB), `pitcher_break_x` (HB), `avg_speed`, plus Savant's own
      percent-rank vs league for the pitch type.
-  2. **pitch-arsenal-stats** ‚Äî `whiff_percent`, `run_value_per_100`,
+  2. **pitch-arsenal-stats** — `whiff_percent`, `run_value_per_100`,
      `pitch_usage`, `k_percent`, `put_away`, `est_woba`, `hard_hit_percent`.
-  3. **custom leaderboard** ‚Äî `arm_angle`. Pitcher-level, joined on player_id.
+  3. **custom leaderboard** — `arm_angle`. Pitcher-level, joined on player_id.
 
 **Extension, VAA and HAA come from raw Statcast, not a leaderboard.** No Savant
-leaderboard publishes them ‚Äî the custom leaderboard echoes back any selection
+leaderboard publishes them — the custom leaderboard echoes back any selection
 name you give it and then returns it empty (seven spellings of extension tried,
 all blank across 339 rows). But the raw pitch-level search export carries the
 release-point physics, so we compute them ourselves:
@@ -23,13 +23,13 @@ release-point physics, so we compute them ourselves:
 
 Statcast measures from y = 50 ft and the plate front edge is 17/12 ft. The
 negation matters: without it the sign comes out inverted and every VAA reads
-positive, which is backwards ‚Äî the ball is descending into the zone.
+positive, which is backwards — the ball is descending into the zone.
 
-Sanity check against known league values: four-seam VAA ‚âà -4.8¬∞, curveball
-‚âà -9.7¬∞, average extension ‚âà 6.4 ft. Those are the numbers this produces.
+Sanity check against known league values: four-seam VAA ≈ -4.8°, curveball
+≈ -9.7°, average extension ≈ 6.4 ft. Those are the numbers this produces.
 
 Because these are stable release traits rather than volatile results, a rolling
-recent window is sampled instead of a whole season ‚Äî a few weeks of pitches is
+recent window is sampled instead of a whole season — a few weeks of pitches is
 plenty and keeps the pull to a sane size.
 """
 
@@ -67,6 +67,13 @@ ARSENAL = (
     "https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats"
     "?type=pitcher&pitchType=&year={year}&team=&min={min_pa}&csv=true"
 )
+SPIN = (
+    "https://baseballsavant.mlb.com/leaderboard/pitch-arsenals"
+    "?type=avg_spin&year={year}&team=&min=10&csv=true"
+)
+# Column prefixes in the pitch-arsenals export -> app pitch keys.
+SPIN_COLS = {"ff": "fourseam", "si": "sinker", "fc": "cutter", "sl": "slider",
+             "st": "sweeper", "cu": "curve", "ch": "change", "fs": "split"}
 CUSTOM = (
     "https://baseballsavant.mlb.com/leaderboard/custom?year={year}&type=pitcher"
     "&filter=&min=50&selections=pa,k_percent,bb_percent,woba,xwoba,arm_angle"
@@ -88,7 +95,7 @@ PITCH_TYPES = {
 
 # Which direction is "better" on IVB, per pitch. This is the rule that makes the
 # leaderboard mean anything: for a four-seam you want ride, so more IVB is
-# better ‚Äî but for a sinker, changeup, splitter or curve, LESS induced vertical
+# better — but for a sinker, changeup, splitter or curve, LESS induced vertical
 # break is the good end. Cutters and sweepers live around zero and can be either
 # side of it depending on the pitcher, so ranking them by IVB is meaningless and
 # we say so rather than sorting them arbitrarily.
@@ -132,7 +139,13 @@ def _name(row: dict) -> str:
     return raw
 
 
-def fetch_movement(year: int, min_pitches: int = 50) -> dict[tuple[str, str], dict]:
+# Leaderboards rank only pitches thrown at least this often; arsenals show
+# everything. Pulling at a low floor and flagging qualification keeps one
+# dataset serving both without a starter's fifth pitch vanishing.
+QUALIFY_PITCHES = 50
+
+
+def fetch_movement(year: int, min_pitches: int = 10) -> dict[tuple[str, str], dict]:
     """(player_id, pitch_key) -> movement row. One request per pitch type."""
     out: dict[tuple[str, str], dict] = {}
     for code, key in PITCH_TYPES.items():
@@ -161,13 +174,14 @@ def fetch_movement(year: int, min_pitches: int = 50) -> dict[tuple[str, str], di
                 "vb": _num(r, "pitcher_break_z"),
                 "hb": _num(r, "pitcher_break_x"),
                 "pitches": thrown,
+                "qualified": thrown >= QUALIFY_PITCHES,
                 "vsLeagueZ": _num(r, "diff_z"),
                 "vsLeagueX": _num(r, "diff_x"),
             }
     return out
 
 
-def fetch_arsenal(year: int, min_pa: int = 10) -> dict[tuple[str, str], dict]:
+def fetch_arsenal(year: int, min_pa: int = 1) -> dict[tuple[str, str], dict]:
     """(player_id, pitch_key) -> results row: whiff, run value, usage."""
     try:
         rows = _rows(_get(ARSENAL.format(year=year, min_pa=min_pa)))
@@ -192,8 +206,26 @@ def fetch_arsenal(year: int, min_pa: int = 10) -> dict[tuple[str, str], dict]:
     return out
 
 
+def fetch_spin(year: int) -> dict[tuple[str, str], float]:
+    """(player_id, pitch_key) -> average spin rate (rpm). One request for all."""
+    try:
+        rows = _rows(_get(SPIN.format(year=year)))
+    except Exception:
+        return {}
+    out: dict[tuple[str, str], float] = {}
+    for r in rows:
+        pid = (r.get("pitcher") or "").strip().strip('"')
+        if not pid:
+            continue
+        for col, key in SPIN_COLS.items():
+            v = _num(r, f"{col}_avg_spin")
+            if v is not None:
+                out[(pid, key)] = v
+    return out
+
+
 def fetch_release(year: int) -> dict[str, dict]:
-    """player_id -> arm angle. Extension is not available here ‚Äî see docstring."""
+    """player_id -> arm angle. Extension is not available here — see docstring."""
     try:
         rows = _rows(_get(CUSTOM.format(year=year)))
     except Exception:
@@ -277,7 +309,7 @@ def fetch_approach(year: int, days: int = APPROACH_WINDOW_DAYS) -> dict[tuple[st
 
 
 def _percentile(values: list[float], v: float) -> float:
-    """Where v sits in values, 0‚Äì100."""
+    """Where v sits in values, 0–100."""
     if not values:
         return 50.0
     below = sum(1 for x in values if x < v)
@@ -285,7 +317,7 @@ def _percentile(values: list[float], v: float) -> float:
 
 
 def _grade(pct: float) -> int:
-    """20‚Äì80 scouting scale from a percentile. 50 is average, 10 points per SD."""
+    """20–80 scouting scale from a percentile. 50 is average, 10 points per SD."""
     # ~0.5 SD per 10 points: p50 -> 50, p84 -> 60, p16 -> 40.
     if pct >= 99: return 80
     if pct >= 95: return 70
@@ -300,10 +332,10 @@ def _grade(pct: float) -> int:
 
 
 def add_grades(rows: list[dict]) -> None:
-    """Grade every pitch on the 20‚Äì80 scale, within its own pitch type.
+    """Grade every pitch on the 20–80 scale, within its own pitch type.
 
     NOTE: this is OUR grade, computed transparently from Savant run value per
-    100 and whiff rate ‚Äî it is not FanGraphs Stuff+ or PitchingBot, and it is
+    100 and whiff rate — it is not FanGraphs Stuff+ or PitchingBot, and it is
     labelled that way in the app so nobody mistakes it for a licensed metric.
     """
     by_pitch: dict[str, list[dict]] = {}
@@ -311,8 +343,11 @@ def add_grades(rows: list[dict]) -> None:
         by_pitch.setdefault(r["pitch"], []).append(r)
 
     for pitch, group in by_pitch.items():
-        rvs = [r["rv100"] for r in group if r.get("rv100") is not None]
-        whiffs = [r["whiff"] for r in group if r.get("whiff") is not None]
+        # Percentiles come from the qualified pool so a 12-pitch sample can't
+        # distort the scale; every row is still graded against that pool.
+        pool = [r for r in group if r.get("qualified")] or group
+        rvs = [r["rv100"] for r in pool if r.get("rv100") is not None]
+        whiffs = [r["whiff"] for r in pool if r.get("whiff") is not None]
         for r in group:
             parts = []
             # Run value per 100 is from the PITCHER's perspective on Savant:
@@ -335,10 +370,12 @@ def build(year: int) -> dict:
     arsenal = fetch_arsenal(year)
     release = fetch_release(year)
     approach = fetch_approach(year)
+    spin = fetch_spin(year)
 
     rows: list[dict] = []
     for key, mv in movement.items():
         row = dict(mv)
+        row["spin"] = spin.get(key)
         row.update(arsenal.get(key, {}))
         row.update(release.get(mv["playerId"], {}))
         row.update(approach.get(key, {}))
@@ -356,6 +393,7 @@ def build(year: int) -> dict:
             "pitchers": len({r["playerId"] for r in rows}),
             "withArsenal": sum(1 for r in rows if r.get("whiff") is not None),
             "withArmAngle": sum(1 for r in rows if r.get("armAngle") is not None),
+            "withSpin": sum(1 for r in rows if r.get("spin") is not None),
             "withApproach": sum(1 for r in rows if r.get("vaa") is not None),
         },
         # No VAA: Savant does not publish it. See module docstring.
@@ -375,7 +413,7 @@ def build_trends(years: list[int] | None = None) -> dict:
 
     This exists because "pitch trends" written from blog posts is just repeating
     what someone else concluded. Pulling arsenal stats for several seasons and
-    diffing them gives findings we can point at a number for ‚Äî usage share,
+    diffing them gives findings we can point at a number for — usage share,
     average velocity and whiff rate per pitch type, and how each has moved.
     """
     years = years or TREND_YEARS
@@ -448,7 +486,7 @@ def build_trends(years: list[int] | None = None) -> dict:
 # metrics.json (league per-pitch ranges) and arsenals.json (featured pitcher
 # mixes) used to be built by a separate pybaseball pipeline that pulled whole
 # raw seasons. Everything they need is already in the rows built above, so they
-# are derived here instead ‚Äî one scheduled job keeps every screen's data the
+# are derived here instead — one scheduled job keeps every screen's data the
 # same age. Spin is the one field these rows don't carry; league spin barely
 # moves year to year, so it ships as reference constants.
 
@@ -472,23 +510,43 @@ def _pct(sorted_vals: list[float], p: float) -> float:
     return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (i - lo)
 
 
+def _metric_block(sample: list[dict], key: str) -> dict:
+    entry: dict = {}
+    for field in ("velo", "ivb", "hb"):
+        vals = sorted(v for r in sample if (v := r.get(field)) is not None)
+        if not vals:
+            continue
+        entry[field] = {
+            "avg": round(sum(vals) / len(vals)),
+            "lo": round(_pct(vals, 0.10)),
+            "hi": round(_pct(vals, 0.90)),
+        }
+    spins = sorted(v for r in sample if (v := r.get("spin")) is not None)
+    entry["spin"] = (
+        {"avg": round(sum(spins) / len(spins)), "lo": round(_pct(spins, 0.10)), "hi": round(_pct(spins, 0.90))}
+        if len(spins) >= 10 else SPIN_REFERENCE[key]
+    )
+    entry["n"] = len(sample)
+    return entry
+
+
 def derive_metrics(rows: list[dict]) -> dict:
-    """League {avg, lo, hi} per pitch type. lo/hi are the 10th/90th percentile ‚Äî
-    'normal range', not extremes, which is what the app's copy promises."""
+    """League {avg, lo, hi} per pitch type, for everyone and split by hand.
+
+    lo/hi are the 10th/90th percentile — 'normal range', not extremes. The
+    hand split matters because HB is signed: a lefty's sinker runs the other
+    way, and a pooled average of +15 and -15 is a lie. Shape:
+      { pitchKey: { all: {...}, L: {...}, R: {...} } }
+    The app's legacy readers that expect the flat block get `all`'s fields
+    mirrored at the top level too."""
     out: dict = {}
     for key in config.APP_PITCH_KEYS:
-        entry: dict = {}
-        sample = [r for r in rows if r["pitch"] == key and (r.get("pitches") or 0) >= 50]
-        for field in ("velo", "ivb", "hb"):
-            vals = sorted(v for r in sample if (v := r.get(field)) is not None)
-            if not vals:
-                continue
-            entry[field] = {
-                "avg": round(sum(vals) / len(vals)),
-                "lo": round(_pct(vals, 0.10)),
-                "hi": round(_pct(vals, 0.90)),
-            }
-        entry["spin"] = SPIN_REFERENCE[key]
+        qualified = [r for r in rows if r["pitch"] == key and r.get("qualified")]
+        allb = _metric_block(qualified, key)
+        entry = dict(allb)
+        entry["all"] = allb
+        entry["L"] = _metric_block([r for r in qualified if r.get("hand") == "L"], key)
+        entry["R"] = _metric_block([r for r in qualified if r.get("hand") == "R"], key)
         out[key] = entry
     return out
 
@@ -502,9 +560,13 @@ def derive_arsenals(rows: list[dict]) -> dict:
         by_name[r["name"]].append(r)
     out: dict = {}
     for slug, (full_name, hand, role) in config.FEATURED.items():
-        mine = [r for r in by_name.get(full_name, []) if r.get("usage")]
+        mine = by_name.get(full_name, [])
         if not mine:
             continue
+        total = sum(r.get("pitches") or 0 for r in mine) or 1
+        for r in mine:
+            if r.get("usage") is None:
+                r["usage"] = round(100 * (r.get("pitches") or 0) / total, 1)
         mine.sort(key=lambda r: -(r["usage"] or 0))
         out[slug] = {
             "name": full_name,
@@ -515,11 +577,12 @@ def derive_arsenals(rows: list[dict]) -> dict:
                     config.PITCH_DISPLAY[r["pitch"]],
                     round(r["usage"]),
                     round(r["velo"]) if r.get("velo") is not None else 0,
-                    f"{'+' if (r.get('ivb') or 0) >= 0 else ''}{round(r.get('ivb') or 0)}‚Ä≥",
-                    f"{abs(round(r.get('hb') or 0))}‚Ä≥",
+                    f"{'+' if (r.get('ivb') or 0) >= 0 else ''}{round(r.get('ivb') or 0)}″",
+                    f"{abs(round(r.get('hb') or 0))}″",
+                    round(r["spin"]) if r.get("spin") is not None else None,
                 ]
                 for r in mine
-                if r.get("usage") and r["usage"] >= 3
+                if r.get("usage") and r["usage"] >= 2
             ],
         }
     return out

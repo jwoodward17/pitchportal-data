@@ -137,6 +137,28 @@ def _fetch(url: str, timeout: int = 20) -> bytes:
         return resp.read()
 
 
+OEMBED = "https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D{vid}&format=json"
+
+
+def _embeddable(vid: str) -> bool:
+    """True if YouTube will play this video inside a third-party embed.
+
+    Uploaders can disable embedding per video; such videos show "Video
+    unavailable" in our player. YouTube's oEmbed endpoint returns 401 for
+    exactly those (400/404 for removed, private or malformed), and 200 otherwise — a keyless,
+    reliable pre-check that costs one small request per clip at ingest time,
+    so the app never shows a card that can't play."""
+    req = urllib.request.Request(OEMBED.format(vid=vid), headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status == 200
+    except urllib.error.HTTPError as e:
+        return e.code not in (400, 401, 403, 404)
+    except Exception:
+        # Network hiccup: keep the clip rather than silently thinning the feed.
+        return True
+
+
 def fetch_channel(ch: Channel, limit: int = 8) -> list[dict]:
     """Pull one channel's recent uploads. Returns [] on any failure — one dead
     channel must not take the whole feed down."""
@@ -157,6 +179,8 @@ def fetch_channel(ch: Channel, limit: int = 8) -> list[dict]:
         vid = vid_el.text
         title = (title_el.text or "").strip()
         published = (pub_el.text or "") if pub_el is not None else ""
+        if not _embeddable(vid):
+            continue
 
         group = entry.find("media:group", NS)
         views = 0
