@@ -1,19 +1,19 @@
-# ─────────────────────────────────────────────────────────────────────────────
+# ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 # PitchPortal data refresh.
 #
 # UPLOAD NOTE: GitHub's web uploader can't create dot-folders, so this file
 # ships as WORKFLOW-refresh.yml at the repo root. After uploading everything,
 # recreate it at the real path:
-#   repo → Add file → Create new file → name it exactly:
+#   repo ‚Üí Add file ‚Üí Create new file ‚Üí name it exactly:
 #       .github/workflows/refresh.yml
-#   → paste this whole file in → Commit. Then this copy can be deleted.
+#   ‚Üí paste this whole file in ‚Üí Commit. Then this copy can be deleted.
 #
 # What it does: every 6 hours, re-pulls Baseball Savant and the YouTube feeds
-# (both pure-stdlib Python — nothing to install), and commits the fresh JSON.
+# (both pure-stdlib Python ‚Äî nothing to install), and commits the fresh JSON.
 # The app reads these files via raw.githubusercontent.com, so a commit here IS
 # the deploy. The season is computed from the calendar inside the ingest, so
 # this keeps working in 2027 without anyone touching it.
-# ─────────────────────────────────────────────────────────────────────────────
+# ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 name: Refresh data
 
 on:
@@ -31,7 +31,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -42,8 +42,11 @@ jobs:
       - name: Rebuild pitching leaderboards
         run: python -m pitchportal_ingest.pitching
 
+      - name: Rebuild single-pitch extremes (incremental; first run backfills the season)
+        run: python -m pitchportal_ingest.extremes || echo "extremes refresh failed; keeping previous"
+
       - name: Rebuild community feed
-        # The feed must not kill the run if YouTube hiccups — stale feed rows
+        # The feed must not kill the run if YouTube hiccups ‚Äî stale feed rows
         # are fine for six hours, a failed workflow stops the pitching data too.
         run: python -m pitchportal_ingest.feed || echo "feed refresh failed; keeping previous"
 
